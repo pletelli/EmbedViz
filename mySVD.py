@@ -1,11 +1,14 @@
 #!/usr/bin/python2.7
 import numpy as np
-import scipy.spatial.distance as sc
 import matplotlib.pyplot as plt
 from rsvd import RSVD, rating_t, MovieLensDataset
+import functions
 
-dataset = MovieLensDataset.loadDat('data_movilens1m/ratings.dat')
-ratings=dataset.ratings()
+
+
+ratingsDataset = MovieLensDataset.loadDat('data_movilens1m/ratings.dat')
+
+ratings=ratingsDataset.ratings()
 
 # make sure that the ratings a properly shuffled
 np.random.shuffle(ratings)
@@ -19,17 +22,14 @@ val = train[v:]
 train = train[:v]
 
 
-dims = (dataset.movieIDs().shape[0], dataset.userIDs().shape[0])
-
-# boucle pour iterer sur reg
+dims = (ratingsDataset.movieIDs().shape[0], ratingsDataset.userIDs().shape[0])
 factor = 40
 
-i = 0
 lambdas = []
 errors = []
-for lambda_f in np.arange(0.00, 0.03, 0.001): 
 # lambda_f ne doit pas depasser 1
-# masEpochs = 1000
+# maxEpochs = 1000
+for lambda_f in np.arange(0.0, 0.05, 0.0005): 
 	model = RSVD.train(factor, train, dims, probeArray=val, maxEpochs = 1000, regularization=lambda_f)
 
 	sqerr=0.0
@@ -57,45 +57,10 @@ print "minimum trouve pour l erreur", min_err
 print "correspond a lambda =", best_lambda
 
 
-#print " lambda | erreur "
-#print "________________"
-#i =0
-#while i < len(lambdas) & i < len(errors):
-	#print i
-	#print lambdas[i], " | " , errors[i]
-
-
 #plot errors /lambdas
 plt.plot(lambdas, errors)
 plt.ylabel('erreur')
 plt.xlabel('lambda')
 plt.show()
 
-#model.u c est une matrice avec un vecteur par film
-#model.v c est une matrice avec un vecteur par utilisateur
-
-dist = sc.pdist(model.u)
-dissim = sc.squareform(dist)
-# on obtient une matrice de dissimilarite
-
-
-
-
-#calcul de norme, retrouver le film associe
-
-# extraire le nombre d iterations
-# visualiser avec un modele pourri
-# caraceristique films (note moyenne, genre, nombre de personne l'ayant noté, type des gens l'ayant noté)
-#selecetion des films a visu en focntion du nombre de note, faible, pas
-# 5OO objet cest bien a visu
-# restreindre lapprentisage aux gens dun certain age/sexe
-
-
-
-
-# TODO
-# interface graphique pour choisir nb facteur, reg, learnRate?
-# reussir a obtenir un modele pour lequel err = 0
-# possibilite d afficher diverses visualisation (par le biais de l interface graphique) -> plot ?
-# train sur jester jokes
 
