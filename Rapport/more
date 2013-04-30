@@ -1,0 +1,43 @@
+1- code svd régularisée:
+
+http://code.google.com/p/pyrsvd/
+
+2- base de données movielens:
+
+http://www.grouplens.org/node/73
+
+3- base de données Jester Jokes
+
+http://www.ieor.berkeley.edu/~goldberg/jester-data/
+
+pour des infos générales:
+
+http://www.netflixprize.com/community/viewtopic.php?id=1043
+
+www.cs.toronto.edu/~marlin/research/thesis/cfmlp.pdf
+(thèse de master de Ben Marlin)
+
+mots clefs:
+
+svd, collaborative filtering
+
+
+Type de représentation :
+methode des plus proches voisins (par norme euclidienne)
+ACP pour plot en 2d
+...
+
+
+moi je dois faire linterface !
+
+reflechir en terme matriciels pas de boucle
+
+todo : mapping titre des films/points
+
+
+voir
+aftd (multi dimension scaling)
+pcl = acp dans matplotlib
+definir les vecteurs à ploter sur l'acp
+clustering hierarchique = hcluster (basé sur la matrice de dist ou les vecteurs)
+scipy.cluster.hierarchy
