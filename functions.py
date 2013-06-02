@@ -1,3 +1,4 @@
+# coding: utf-8
 from os.path import exists
 from rsvd import RSVD, rating_t, MovieLensDataset
 
@@ -5,59 +6,6 @@ import numpy as np
 import scipy.spatial.distance as dist
 from collections import Counter
 import re
-
-def findBestFactor(ratingsDataset):
-
-    ratings=ratingsDataset.ratings()
-
-
-    # create train, validation and test sets.
-    n = int(ratings.shape[0]*0.8)
-    train = ratings[:n]
-    test = ratings[n:]
-    v = int(train.shape[0]*0.9)
-    val = train[v:]
-    train = train[:v]
-
-
-    dims = (ratingsDataset.movieIDs().shape[0], ratingsDataset.userIDs().shape[0])
-
-    
-    factors = []
-    errors = []
-    # lambda_f ne doit pas depasser 1
-
-
-    # default values
-    #probeArray=None
-    #maxEpochs=100
-    #minImprovement=0.000001
-    #learnRate=0.001
-    #regularization=0.011
-    #randomize=False
-    #randomNoise=0.005
-    for factor in range(1, 100):
-        model = RSVD.train(factor, train, dims, probeArray=val, maxEpochs = 1000, regularization=0.011)
-
-        sqerr=0.0
-        for movieID,userID,rating in test:
-             err = rating - model(movieID,userID)
-             sqerr += err * err
-        sqerr /= test.shape[0]
-
-        factors.append(factor)
-        errors.append(np.sqrt(sqerr))
-
-    # get minimal error and its corresponding lamda
-    min_err = min(errors)
-    id_min_err = errors.index(min(errors))
-    best_factor = factors[id_min_err]
-
-
-    # returns a dict, do result['best_factor'] to get the corresponding value
-    return {'factors':factors, 'errors':errors}
-
-
 
 # one way to test a model : RMSE
 def computeRMSE(model,test):
@@ -103,15 +51,15 @@ def getNLessSimilarOfOne(n, moviesSimilarityVector,movieID):
 # trouve les n films les moins semblables parmis l'ensemble
 def getNLessSimilarOfAll(n, moviesSimilarityVector):
     allIds = np.zeros((n,2), int)
-    dist = []
+    di = []
     copie = np.copy(moviesSimilarityVector)
     for i in xrange(n):
         ids = np.argmax(copie)
-        dist.append(np.amax(copie))
+        di.append(np.amax(copie))
         allIds[i] = getIndexes(ids,moviesSimilarityVector.shape[0])
         copie[ids] = -1;
 
-    return allIds, dist
+    return allIds, di
 
 # trouve parmis l'ensemble des films les 2 les plus semblables
 def getMostSimilarOfAll(moviesSimilarityVector):
@@ -128,20 +76,21 @@ def getMostSimilarOfOne(moviesSimilarityVector, movieID):
 def getNMostSimilarOfOne(n, moviesSimilarityVector,movieID):
     moviesSimilarityMatrix = dist.squareform(moviesSimilarityVector)
     ii = np.argsort(moviesSimilarityMatrix[movieID])[1:n+1] # positions # le premier est toujours 0 donc on ne le prend pas
-    return ii
+    di = np.sort(moviesSimilarityMatrix[movieID])[1:n+1]
+    return ii,di
 
 # trouve les n films les plus semblables parmis l'ensemble
 def getNMostSimilarOfAll(n, moviesSimilarityVector):
     allIds = np.zeros((n,2), int)
-    dist = []
+    di = []
     copie = np.copy(moviesSimilarityVector)
     for i in xrange(n):
         ids = np.argmin(copie)
-        dist.append(np.amin(copie))
+        di.append(np.amin(copie))
         allIds[i] = getIndexes(ids,moviesSimilarityVector.shape[0])
         copie[ids] = 1000;
 
-    return allIds, dist
+    return allIds, di
 
 #trouve le film qui ne ressemble a aucun autre
 def getWeirdestOfAll(n, moviesSimilarityVector):
@@ -178,9 +127,9 @@ def getGlobalStatistics(moviesSimilarityVector,original_movieIDs, moviesInformat
     print "------------------------------------"
     print "  les 20 films les plus similaires"
     print "------------------------------------"
-    simil,dist = getNMostSimilarOfAll(20, moviesSimilarityVector)
+    simil,di = getNMostSimilarOfAll(20, moviesSimilarityVector)
     for i,row in enumerate(simil):
-        print i, "avec ", round(dist[i],3)," : ", getMovieInformations(moviesInformations,original_movieIDs[row[0]])[0].decode('utf-8'),getMovieInformations(moviesInformations,original_movieIDs[row[0]])[1].decode('utf-8')
+        print i, "avec ", round(di[i],3)," : ", getMovieInformations(moviesInformations,original_movieIDs[row[0]])[0].decode('utf-8'),getMovieInformations(moviesInformations,original_movieIDs[row[0]])[1].decode('utf-8')
         print "       ", getMovieInformations(moviesInformations,original_movieIDs[row[1]])[0].decode('utf-8'),getMovieInformations(moviesInformations,original_movieIDs[row[1]])[1].decode('utf-8')
 
 
@@ -188,9 +137,9 @@ def getGlobalStatistics(moviesSimilarityVector,original_movieIDs, moviesInformat
     print "--------------------------------------"
     print "  les 20 films les plus dissimilaires"
     print "--------------------------------------"
-    simil,dist = getNLessSimilarOfAll(20, moviesSimilarityVector)
+    simil,di = getNLessSimilarOfAll(20, moviesSimilarityVector)
     for i,row in enumerate(simil):
-        print i, "avec ", round(dist[i],4)," : ", getMovieInformations(moviesInformations,original_movieIDs[row[0]])[0].decode('utf-8'),getMovieInformations(moviesInformations,original_movieIDs[row[0]])[1].decode('utf-8')
+        print i, "avec ", round(di[i],4)," : ", getMovieInformations(moviesInformations,original_movieIDs[row[0]])[0].decode('utf-8'),getMovieInformations(moviesInformations,original_movieIDs[row[0]])[1].decode('utf-8')
         print "       ", getMovieInformations(moviesInformations,original_movieIDs[row[1]])[0].decode('utf-8'),getMovieInformations(moviesInformations,original_movieIDs[row[1]])[1].decode('utf-8')
 
     # les 5 films les plus "normaux"
@@ -227,6 +176,22 @@ def loadMoviesInformations(file):
     finally:
         f.close()  
 
+
+#id :: gender :: age :: occupation :: zipcode
+def loadUsersInformations(file):
+    """Loads the names of the movies via movies.dat file. 
+    """
+    if not exists(file):
+        raise ValueError("%s file does not exist" % file)
+    f=open(file)
+    try:
+        rows=[tuple(l.rstrip().split("::")) for l in f.readlines()]
+        usersInfo = {a:(b,c,d,e) for a,b,c,d,e in rows}
+
+        return usersInfo
+    finally:
+        f.close() 
+
 def getMovieInformations(table, movieID):
     """Get the name and genre of the given movieID from the given table.
     """
@@ -242,6 +207,13 @@ def getMovieGenres(table, movieID):
     """Loads the genre of the given movieID.
     """
     return getMovieInformations(table, movieID)[1]
+
+def getGenres(table):
+    genres = [(key,list(value[1].rstrip().split("|"))) for (key,value) in table.iteritems()]
+    genres1 = dict()
+    for (key, value) in genres :
+        genres1[key] = value[0] 
+    return genres1
 
 
 def getMoviesNames(table,movieIDs) :
@@ -264,20 +236,10 @@ def getNMostRatedMovies(ratings,n=600):
     timesRated = Counter(ratings['f0'])
     return list(movie for movie,rateNb in timesRated.iteritems() if rateNb>=n)
 
-
-
-
-def llf(id):
-    if id < n:
-        return str(id)
-    else:
-        return '[%d %d %1.2f]' % (id, count, R[n-id,3])
-
-
-
-
-
-
+# get the movies that have at least n rates
+def getNMostRatingUsers(ratings,n=100):
+    timesRated = Counter(ratings['f1'])
+    return list(user for user,rateNb in timesRated.iteritems() if rateNb>=n)
 
 
 # get the movies that have been rated n
